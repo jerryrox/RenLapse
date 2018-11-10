@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Renko.Frameworks
+namespace Renko.LapseFramework
 {
 	public interface ILapseListener {
 

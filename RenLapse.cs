@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System;
 using UnityEngine;
-using Renko.Frameworks.Internal;
+using Renko.LapseFramework.Internal;
 
-namespace Renko.Frameworks
+namespace Renko.LapseFramework
 {
 	/// <summary>
 	/// RenLapse framework manager.
@@ -19,6 +19,7 @@ namespace Renko.Frameworks
 
 		private bool isLapsersDirty;
 		private List<Lapser> lapsers;
+		private LapseRecycler recycler;
 
 
 		/// <summary>
@@ -72,8 +73,8 @@ namespace Renko.Frameworks
 				throw new NullReferenceException("RenLapse.CreateLapser - RenLapse is not initialized!");
 			if(listenerCapacity < 0)
 				throw new ArgumentException("RenLapse.CreateLapser - listenerCapacity must be zero or greater!");
-
-			return new Lapser(I, NextID, listenerCapacity);
+			
+			return I.recycler.GetNextLapser(NextID, listenerCapacity);
 		}
 
 		/// <summary>
@@ -113,6 +114,7 @@ namespace Renko.Frameworks
 		void OnInitialize(int lapserCapacity)
 		{
 			lapsers = new List<Lapser>(lapserCapacity);
+			recycler = new LapseRecycler(this, lapserCapacity);
 		}
 
 		void Update()
@@ -133,7 +135,13 @@ namespace Renko.Frameworks
 					lapsers.RemoveAt(i);
 					continue;
 				}
-				lapsers[i].Update(deltaTime);
+				// Do update. If lapser should be destroyed
+				if(!lapser.Update(deltaTime))
+				{
+					// Release the lapser to recycler and remove from update list.
+					recycler.ReleaseLapser(lapser);
+					lapsers.RemoveAt(i);
+				}
 			}
 		}
 
@@ -146,9 +154,9 @@ namespace Renko.Frameworks
 			// Removal should be handled during update.
 			for(int i=lapsers.Count-1; i>=0; i--)
 			{
-				if(lapsers[i].IsDestroyOnLoad)
+				if(lapsers[i] != null && lapsers[i].IsDestroyOnLoad)
 				{
-					lapsers[i].ClearListener();
+					recycler.ReleaseLapser(lapsers[i]);
 					lapsers[i] = null;
 				}
 			}
@@ -163,9 +171,9 @@ namespace Renko.Frameworks
 				if(a == null && b == null)
 					return 0;
 				else if(a == null)
-					return int.MinValue;
-				else if(b == null)
 					return int.MaxValue;
+				else if(b == null)
+					return int.MinValue;
 
 				return b.Priority.CompareTo(a.Priority);
 			});

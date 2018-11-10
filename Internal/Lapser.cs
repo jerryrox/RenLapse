@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Renko.Frameworks.Internal
+namespace Renko.LapseFramework.Internal
 {
 	public sealed class Lapser : ILapser {
 
@@ -18,6 +18,7 @@ namespace Renko.Frameworks.Internal
 		private bool isFixedDeltaTime;
 		private bool isLapseStarted;
 		private bool isUpdating;
+		private bool isDestroyed;
 		private RenLapse owner;
 		private List<ILapseListener> listeners;
 
@@ -86,11 +87,27 @@ namespace Renko.Frameworks.Internal
 			get { return isUpdating; }
 		}
 
+		public bool IsDestroyed
+		{
+			get { return isDestroyed; }
+		}
+
 
 		public Lapser(RenLapse owner, int id, int listenerCapacity)
 		{
 			this.owner = owner;
-			this.id = id;
+			listeners = new List<ILapseListener>();
+
+			// Reset to initial state.
+			Recycle(id, listenerCapacity);
+		}
+
+		/// <summary>
+		/// Resets this lapser's state to its initial state for recycling.
+		/// </summary>
+		public void Recycle(int newID, int newCapacity)
+		{
+			id = newID;
 			maxSkipFrames = RenLapse.Frame_NoSkip;
 			skippedFrames = 0;
 			elapsedTime = 0f;
@@ -98,15 +115,30 @@ namespace Renko.Frameworks.Internal
 			lastDeltaTime = 0f;
 			isDestroyOnLoad = true;
 			isFixedDeltaTime = false;
-			listeners = new List<ILapseListener>(listenerCapacity);
+			isLapseStarted = false;
+			isUpdating = false;
+			isDestroyed = false;
+			listeners.Capacity = newCapacity;
 
 			TargetFrameRate = 1f;
 		}
 
+		/// <summary>
+		/// Handles resetting process before completely removing from lapse update.
+		/// Not exactly disposing to make it unusable, but I couldn't find a better name :P
+		/// </summary>
+		public void Dispose()
+		{
+			// Lapser should no longer update
+			isUpdating = false;
+			// Clear all listeners
+			ClearListeners();
+		}
+
 		public void Start()
 		{
-			// If updating, return
-			if(isUpdating)
+			// If updating, or is destroyed return
+			if(isUpdating || isDestroyed)
 				return;
 			
 			// If first time starting lapse update
@@ -140,8 +172,8 @@ namespace Renko.Frameworks.Internal
 
 		public void Pause()
 		{
-			// If not updating, return
-			if(!isUpdating)
+			// If not updating, or is destroyed return
+			if(!isUpdating || isDestroyed)
 				return;
 			
 			// Fire the pause event to all listeners
@@ -157,10 +189,16 @@ namespace Renko.Frameworks.Internal
 			owner.DetachLapser(this);
 		}
 
+		public void Destroy()
+		{
+			// Simply flag the lapser so it's destroyed in the next update.
+			isDestroyed = true;
+		}
+
 		public void AddListener(ILapseListener listener)
 		{
-			// Add listener only if not already registered.
-			if(listener == null || listeners.Contains(listener))
+			// Add listener only if not already registered and is not destroyed
+			if(isDestroyed || listener == null || listeners.Contains(listener))
 				return;
 			listeners.Add(listener);
 
@@ -178,7 +216,8 @@ namespace Renko.Frameworks.Internal
 
 		public bool RemoveListener(ILapseListener listener)
 		{
-			if(listener == null)
+			// Return if invalid listener or lapser is destroyed
+			if(isDestroyed || listener == null)
 				return false;
 			
 			for(int i=listeners.Count-1; i>=0; i--)
@@ -198,10 +237,10 @@ namespace Renko.Frameworks.Internal
 
 		public bool ContainsListener(ILapseListener listener)
 		{
-			return listener != null && listeners.Contains(listener);
+			return !isDestroyed && listener != null && listeners.Contains(listener);
 		}
 
-		public void ClearListener()
+		public void ClearListeners()
 		{
 			// Fire on end event for all listeners and clear list.
 			for(int i=listeners.Count-1; i>=0; i--)
@@ -212,8 +251,15 @@ namespace Renko.Frameworks.Internal
 			listeners.Clear();
 		}
 
-		public void Update(float deltaTime)
+		/// <summary>
+		/// Handles the update process for this frame.
+		/// </summary>
+		public bool Update(float deltaTime)
 		{
+			// If lapser is destroyed before this update, just stop
+			if(isDestroyed)
+				return false;
+
 			// Add elapsed time
 			elapsedTime += deltaTime;
 
@@ -260,9 +306,26 @@ namespace Renko.Frameworks.Internal
 						listeners.RemoveAt(i);
 						continue;
 					}
-					listener.OnLapseUpdate(this);
+					// Do update. If the listener should stop listening to further calls
+					if(!listener.OnLapseUpdate(this))
+					{
+						// If the developer destroyed the lapser during update, just break out of the loop.
+						if(isDestroyed)
+							break;
+						
+						// Send end event and remove from update list.
+						listener.OnLapseEnd(this);
+						listeners.RemoveAt(i);
+
+						// If the developer destroyed the lapser during end event, just break out of the loop.
+						if(isDestroyed)
+							break;
+					}
 				}
 			}
+
+			// Lapser should continue as long as it's not destroyed.
+			return !isDestroyed;
 		}
 	}
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Renko.Frameworks
+namespace Renko.LapseFramework
 {
 	public interface ILapser {
 
@@ -63,6 +63,11 @@ namespace Renko.Frameworks
 		/// </summary>
 		bool IsUpdating { get; }
 
+		/// <summary>
+		/// Returns whether this lapser is destroyed.
+		/// </summary>
+		bool IsDestroyed { get; }
+
 
 		/// <summary>
 		/// Starts or resumes updating.
@@ -76,6 +81,11 @@ namespace Renko.Frameworks
 		/// Fires OnLapsePause event.
 		/// </summary>
 		void Pause();
+
+		/// <summary>
+		/// Destroys the lapser to completely remove it from updating.
+		/// </summary>
+		void Destroy();
 
 		/// <summary>
 		/// Adds the specified listener to this lapser.
@@ -96,7 +106,7 @@ namespace Renko.Frameworks
 		/// <summary>
 		/// Removes all listeners.
 		/// </summary>
-		void ClearListener();
+		void ClearListeners();
 	}
 }
 
