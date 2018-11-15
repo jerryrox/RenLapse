@@ -1,10 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Renko.LapseFramework.Internal
 {
-	public sealed class Lapser : ILapser {
+	public sealed class Lapser : ILapser, IDisposable {
 
 		private int id;
 		private int maxSkipFrames;
@@ -93,20 +94,18 @@ namespace Renko.LapseFramework.Internal
 		}
 
 
-		public Lapser(RenLapse owner, int id, int listenerCapacity)
+		public Lapser()
 		{
-			this.owner = owner;
 			listeners = new List<ILapseListener>();
-
-			// Reset to initial state.
-			Recycle(id, listenerCapacity);
 		}
 
 		/// <summary>
 		/// Resets this lapser's state to its initial state for recycling.
 		/// </summary>
-		public void Recycle(int newID, int newCapacity)
+		public void Recycle(RenLapse owner, int newID, int newCapacity)
 		{
+			this.owner = owner;
+
 			id = newID;
 			maxSkipFrames = RenLapse.Frame_NoSkip;
 			skippedFrames = 0;
@@ -187,6 +186,30 @@ namespace Renko.LapseFramework.Internal
 			isUpdating = false;
 			// Don't listen to owner's update calls.
 			owner.DetachLapser(this);
+		}
+
+		public void Stop()
+		{
+			// Set updating flag
+			isUpdating = false;
+			// Don't listen to owner's update calls.
+			owner.DetachLapser(this);
+
+			// Reset time to 0.
+			skippedFrames = 0;
+			elapsedTime = 0f;
+			lastElapsedTime = 0f;
+			lastDeltaTime = 0f;
+
+			// Make Start() method invoke lapse start event.
+			isLapseStarted = false;
+
+			// Call stop event
+			for(int i=listeners.Count-1; i>=0; i--)
+			{
+				if(listeners[i] != null)
+					listeners[i].OnLapseStop(this);
+			}
 		}
 
 		public void Destroy()
@@ -312,7 +335,7 @@ namespace Renko.LapseFramework.Internal
 						// If the developer destroyed the lapser during update, just break out of the loop.
 						if(isDestroyed)
 							break;
-						
+
 						// Send end event and remove from update list.
 						listener.OnLapseEnd(this);
 						listeners.RemoveAt(i);

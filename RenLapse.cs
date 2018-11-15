@@ -17,10 +17,34 @@ namespace Renko.LapseFramework
 		private static RenLapse I;
 		private static int CurID;
 
+		private List<IAddon> addons;
+
 		private bool isLapsersDirty;
 		private List<Lapser> lapsers;
-		private LapseRecycler recycler;
+		private LapserRecycler recycler;
 
+
+		/// <summary>
+		/// Whether RenLapse should recycle objects created for handling time events, etc.
+		/// RenLapse must be initialized first.
+		/// Default: true
+		/// </summary>
+		public static bool ShouldRecycle
+		{
+			get
+			{
+				if(I == null)
+					throw new NullReferenceException("RenLapse.ShouldRecycle - RenLapse is not initialized!");
+				return I.recycler.ShouldRecycle;
+			}
+			set
+			{
+				if(I == null)
+					throw new NullReferenceException("RenLapse.ShouldRecycle - RenLapse is not initialized!");
+				I.recycler.ShouldRecycle = value;
+				I.NotifyAddons(addon => addon.OnRecycleFlagSet(value));
+			}
+		}
 
 		/// <summary>
 		/// Returns the next id to assign for a new Lapser object.
@@ -37,10 +61,7 @@ namespace Renko.LapseFramework
 		public static void Initialize(int lapserCapacity = 0)
 		{
 			if(I != null)
-			{
-				Debug.LogWarning("RenLapse.Initialize - RenLapse is already initialized!");
 				return;
-			}
 			if(lapserCapacity < 0)
 				throw new ArgumentException("RenLapse.Initialize - lapserCapacity must be zero or greater!");
 
@@ -50,6 +71,7 @@ namespace Renko.LapseFramework
 
 		/// <summary>
 		/// Returns the lapser associated with specified id.
+		/// RenLapse must be initialized first.
 		/// </summary>
 		public static ILapser FindLapserWithID(int id)
 		{
@@ -66,6 +88,7 @@ namespace Renko.LapseFramework
 
 		/// <summary>
 		/// Creates a new lapser and returns it.
+		/// RenLapse must be initialized first.
 		/// </summary>
 		public static ILapser CreateLapser(int listenerCapacity = 0)
 		{
@@ -74,7 +97,27 @@ namespace Renko.LapseFramework
 			if(listenerCapacity < 0)
 				throw new ArgumentException("RenLapse.CreateLapser - listenerCapacity must be zero or greater!");
 			
-			return I.recycler.GetNextLapser(NextID, listenerCapacity);
+			return I.recycler.GetNext(NextID, listenerCapacity);
+		}
+
+		/// <summary>
+		/// (Internal) Adds the specified addon to RenLapse.
+		/// </summary>
+		public static void AttachAddon(IAddon addon)
+		{
+			if(I == null)
+				throw new NullReferenceException("RenLapse.AttachAddon - RenLapse is not initialized!");
+			if(addon == null)
+				throw new ArgumentNullException("RenLapse.AttachAddon - addon must not be null!");
+
+			if(!I.addons.Contains(addon))
+			{
+				I.addons.Add(addon);
+
+				// Notify all events.
+				bool shouldRecycle = ShouldRecycle;
+				I.NotifyAddons(a => a.OnRecycleFlagSet(shouldRecycle));
+			}
 		}
 
 		/// <summary>
@@ -113,8 +156,10 @@ namespace Renko.LapseFramework
 
 		void OnInitialize(int lapserCapacity)
 		{
+			addons = new List<IAddon>();
+
 			lapsers = new List<Lapser>(lapserCapacity);
-			recycler = new LapseRecycler(this, lapserCapacity);
+			recycler = new LapserRecycler(this, lapserCapacity);
 		}
 
 		void Update()
@@ -139,7 +184,7 @@ namespace Renko.LapseFramework
 				if(!lapser.Update(deltaTime))
 				{
 					// Release the lapser to recycler and remove from update list.
-					recycler.ReleaseLapser(lapser);
+					recycler.ReturnItem(lapser);
 					lapsers.RemoveAt(i);
 				}
 			}
@@ -156,7 +201,7 @@ namespace Renko.LapseFramework
 			{
 				if(lapsers[i] != null && lapsers[i].IsDestroyOnLoad)
 				{
-					recycler.ReleaseLapser(lapsers[i]);
+					recycler.ReturnItem(lapsers[i]);
 					lapsers[i] = null;
 				}
 			}
@@ -177,6 +222,15 @@ namespace Renko.LapseFramework
 
 				return b.Priority.CompareTo(a.Priority);
 			});
+		}
+
+		/// <summary>
+		/// Notifies all RenLapse addons of a specific event.
+		/// </summary>
+		void NotifyAddons(Action<IAddon> actionHandler)
+		{
+			for(int i=0; i<addons.Count; i++)
+				actionHandler(addons[i]);
 		}
 	}
 }

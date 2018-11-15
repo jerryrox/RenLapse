@@ -83,6 +83,12 @@ namespace Renko.LapseFramework
 		void Pause();
 
 		/// <summary>
+		/// Pauses updating and resets time to 0. Start() method will call OnLapseStart event instead afterwards.
+		/// Fires OnLapseStop event.
+		/// </summary>
+		void Stop();
+
+		/// <summary>
 		/// Destroys the lapser to completely remove it from updating.
 		/// </summary>
 		void Destroy();

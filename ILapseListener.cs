@@ -25,6 +25,11 @@ namespace Renko.LapseFramework
 		void OnLapsePause(ILapser lapser);
 
 		/// <summary>
+		/// Handles lapse stop event from lapser.
+		/// </summary>
+		void OnLapseStop(ILapser lapser);
+
+		/// <summary>
 		/// Handles lapse end event from lapser.
 		/// </summary>
 		void OnLapseEnd(ILapser lapser);
