@@ -24,7 +24,7 @@ namespace Renko.LapseFramework.Internal
 
 
 		/// <summary>
-		/// Resets this object to is initial state.
+		/// Resets this object to its initial state.
 		/// </summary>
 		public void Recycle(Timer owner, ILapser lapser, Timer.CallbackHandler callback)
 		{
