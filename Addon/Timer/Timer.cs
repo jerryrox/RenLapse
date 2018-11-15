@@ -15,7 +15,9 @@ namespace Renko.LapseFramework
 		private static Timer I;
 
 		private List<TimerDelay> delayItems;
+		private List<TimerInterval> intervalItems;
 		private DelayRecycler delayRecycler;
+		private IntervalRecycler intervalRecycler;
 
 		public delegate void CallbackHandler();
 
@@ -23,7 +25,9 @@ namespace Renko.LapseFramework
 		public Timer(int capacity)
 		{
 			delayItems = new List<TimerDelay>(capacity);
+			intervalItems = new List<TimerInterval>(capacity);
 			delayRecycler = new DelayRecycler(this, capacity);
+			intervalRecycler = new IntervalRecycler(this, capacity);
 		}
 
 		/// <summary>
@@ -66,12 +70,43 @@ namespace Renko.LapseFramework
 		}
 
 		/// <summary>
+		/// Creates a new interval event to be called every after specified time in seconds.
+		/// </summary>
+		public static ITimerInterval CreateInterval(Timer.CallbackHandler callback, float time,
+			int repeats = int.MaxValue, int priority = 0)
+		{
+			if(I == null)
+				throw new NullReferenceException("Timer.CreateInterval - Timer not initialized!");
+			if(callback == null)
+				throw new ArgumentNullException("Timer.CreateInterval - callback must not be null!");
+
+			// Allocate a lapser for delay object.
+			ILapser lapser = RenLapse.CreateLapser(1);
+			lapser.TargetDeltaTime = time;
+			lapser.Priority = priority;
+
+			TimerInterval interval = I.intervalRecycler.GetNext(lapser, callback);
+			interval.RepeatsLeft = repeats;
+			I.intervalItems.Add(interval);
+			return interval;
+		}
+
+		/// <summary>
 		/// Removes specified TimerDelay from update and adds to recycler.
 		/// </summary>
 		public void RemoveDelay(TimerDelay delay)
 		{
 			delayItems.Remove(delay);
 			delayRecycler.ReturnItem(delay);
+		}
+
+		/// <summary>
+		/// Removes specified TimerInterval from update and adds to recycler.
+		/// </summary>
+		public void RemoveInterval(TimerInterval interval)
+		{
+			intervalItems.Remove(interval);
+			intervalRecycler.ReturnItem(interval);
 		}
 
 		/// <summary>
