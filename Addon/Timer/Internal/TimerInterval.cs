@@ -117,6 +117,7 @@ namespace Renko.LapseFramework.Internal
 			isValid = false;
 			callback = null;
 
+			lapser.RemoveListener(this);
 			lapser.Destroy();
 			lapser = null;
 

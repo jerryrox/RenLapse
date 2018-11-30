@@ -214,8 +214,14 @@ namespace Renko.LapseFramework.Internal
 
 		public void Destroy()
 		{
+			if(isDestroyed)
+				return;
+			
 			// Simply flag the lapser so it's destroyed in the next update.
 			isDestroyed = true;
+			// Object disposal occurs during RenLapse's update routine so the lapser should listen to updates.
+			if(!isUpdating)
+				owner.AttachLapser(this);
 		}
 
 		public void AddListener(ILapseListener listener)
