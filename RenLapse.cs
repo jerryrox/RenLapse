@@ -10,7 +10,7 @@ namespace Renko.LapseFramework
 	/// RenLapse framework manager.
 	/// </summary>
 	public sealed class RenLapse : MonoBehaviour {
-
+		
 		public const int Frame_NoSkip = 0;
 		public const int Frame_AlwaysSkip = 99999999;
 

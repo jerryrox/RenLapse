@@ -14,8 +14,6 @@ namespace Renko.LapseFramework
 
 		private static Timer I;
 
-		private List<TimerDelay> delayItems;
-		private List<TimerInterval> intervalItems;
 		private DelayRecycler delayRecycler;
 		private IntervalRecycler intervalRecycler;
 
@@ -24,8 +22,6 @@ namespace Renko.LapseFramework
 
 		public Timer(int capacity)
 		{
-			delayItems = new List<TimerDelay>(capacity);
-			intervalItems = new List<TimerInterval>(capacity);
 			delayRecycler = new DelayRecycler(this, capacity);
 			intervalRecycler = new IntervalRecycler(this, capacity);
 		}
@@ -34,17 +30,17 @@ namespace Renko.LapseFramework
 		/// Initializes the Timer addon.
 		/// RenLapse is initialized together if not already done.
 		/// </summary>
-		public static void Initialize(int timerCapacity = 0)
+		public static void Initialize(int listCapacity = 0)
 		{
 			if(I != null)
 				return;
-			if(timerCapacity < 0)
-				throw new ArgumentException("Timer.Initialize - timerCapacity must be zero or greater!");
+			if(listCapacity < 0)
+				throw new ArgumentException("Timer.Initialize - listCapacity must be zero or greater!");
 			
 			// Init RenLapse
-			RenLapse.Initialize(timerCapacity);
+			RenLapse.Initialize(listCapacity);
 			// Initialize timer
-			I = new Timer(timerCapacity);
+			I = new Timer(listCapacity);
 			// Attach to RenLapse as addon.
 			RenLapse.AttachAddon(I);
 		}
@@ -65,7 +61,6 @@ namespace Renko.LapseFramework
 			lapser.Priority = priority;
 
 			TimerDelay delay = I.delayRecycler.GetNext(lapser, callback);
-			I.delayItems.Add(delay);
 			return delay;
 		}
 
@@ -87,7 +82,6 @@ namespace Renko.LapseFramework
 
 			TimerInterval interval = I.intervalRecycler.GetNext(lapser, callback);
 			interval.RepeatsLeft = repeats;
-			I.intervalItems.Add(interval);
 			return interval;
 		}
 
@@ -96,7 +90,6 @@ namespace Renko.LapseFramework
 		/// </summary>
 		public void RemoveDelay(TimerDelay delay)
 		{
-			delayItems.Remove(delay);
 			delayRecycler.ReturnItem(delay);
 		}
 
@@ -105,7 +98,6 @@ namespace Renko.LapseFramework
 		/// </summary>
 		public void RemoveInterval(TimerInterval interval)
 		{
-			intervalItems.Remove(interval);
 			intervalRecycler.ReturnItem(interval);
 		}
 
