@@ -12,7 +12,7 @@ namespace Renko.LapseFramework.Internal
 			this.owner = owner;
 		}
 
-		public new TimerDelay GetNext(ILapser lapser, Timer.CallbackHandler callback)
+		public TimerDelay GetNext(ILapser lapser, Timer.CallbackHandler callback)
 		{
 			TimerDelay delay = base.GetNext();
 			delay.Recycle(owner, lapser, callback);

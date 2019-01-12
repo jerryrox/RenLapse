@@ -12,7 +12,7 @@ namespace Renko.LapseFramework.Internal
 			this.owner = owner;
 		}
 
-		public new FateTimer GetNext(ILapser lapser, int capacity)
+		public FateTimer GetNext(ILapser lapser, int capacity)
 		{
 			FateTimer timer = base.GetNext();
 			timer.Recycle(owner, lapser, capacity);

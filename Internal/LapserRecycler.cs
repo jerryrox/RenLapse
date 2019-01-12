@@ -13,7 +13,7 @@ namespace Renko.LapseFramework.Internal
 			this.owner = owner;
 		}
 
-		public new Lapser GetNext(int nextId, int capacity)
+		public Lapser GetNext(int nextId, int capacity)
 		{
 			Lapser lapser = base.GetNext();
 			lapser.Recycle(owner, nextId, capacity);
