@@ -29,9 +29,19 @@ namespace Renko.LapseFramework
 		IFateSection<IFateFramer> AddSection(int startFrame, int endFrame, int listCapacity);
 
 		/// <summary>
+		/// Creates an update action at specified frames.
+		/// </summary>
+		IFateSection<IFateFramer> AddSection(int startFrame, int endFrame, FateFX.EventAction<IFateFramer> updateAction);
+
+		/// <summary>
 		/// Creates a new trigger at specified frame to the root controller.
 		/// </summary>
 		IFateTrigger<IFateFramer> AddTrigger(int frame, int listCapacity);
+
+		/// <summary>
+		/// Creates a trigger action at specified frame.
+		/// </summary>
+		IFateTrigger<IFateFramer> AddTrigger(int frame, FateFX.EventAction<IFateFramer> triggerAction);
 	}
 }
 

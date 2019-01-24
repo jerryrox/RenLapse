@@ -29,9 +29,19 @@ namespace Renko.LapseFramework
 		IFateSection<IFateTimer> AddSection(float startTime, float endTime, int listCapacity);
 
 		/// <summary>
+		/// Creates an update action at specified times.
+		/// </summary>
+		IFateSection<IFateTimer> AddSection(float startTime, float endTime, FateFX.EventAction<IFateTimer> updateAction);
+
+		/// <summary>
 		/// Creates a new trigger at specified time.
 		/// </summary>
 		IFateTrigger<IFateTimer> AddTrigger(float time, int listCapacity);
+
+		/// <summary>
+		/// Creates a trigger action at specified time.
+		/// </summary>
+		IFateTrigger<IFateTimer> AddTrigger(float time, FateFX.EventAction<IFateTimer> triggerAction);
 	}
 }
 

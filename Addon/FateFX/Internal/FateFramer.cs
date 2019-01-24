@@ -281,6 +281,14 @@ namespace Renko.LapseFramework.Internal
 			return framer;
 		}
 
+		public IFateSection<IFateFramer> AddSection(int startFrame, int endFrame,
+			FateFX.EventAction<IFateFramer> updateAction)
+		{
+			var section = AddSection(startFrame, endFrame, 1);
+			section.AddEvent(FateEvents.OnUpdate, updateAction);
+			return section;
+		}
+
 		public IFateTrigger<IFateFramer> AddTrigger (int frame, int listCapacity = 0)
 		{
 			if(!isValid)
@@ -295,6 +303,13 @@ namespace Renko.LapseFramework.Internal
 			EvaluateEndFrame(frame);
 			InsertChild(framer);
 			return framer;
+		}
+
+		public IFateTrigger<IFateFramer> AddTrigger(int frame, FateFX.EventAction<IFateFramer> triggerAction)
+		{
+			var trigger = AddTrigger(frame, 1);
+			trigger.AddEvent(triggerAction);
+			return trigger;
 		}
 
 		protected override bool CanUpdateAtCurrent(FateFramer framer)

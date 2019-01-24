@@ -301,6 +301,14 @@ namespace Renko.LapseFramework.Internal
 			return timer;
 		}
 
+		public IFateSection<IFateTimer> AddSection(float startTime, float endTime,
+			FateFX.EventAction<IFateTimer> updateAction)
+		{
+			var section = AddSection(startTime, endTime, 1);
+			section.AddEvent(FateEvents.OnUpdate, updateAction);
+			return section;
+		}
+
 		public IFateTrigger<IFateTimer> AddTrigger (float time, int listCapacity = 0)
 		{
 			if(!isValid)
@@ -315,6 +323,14 @@ namespace Renko.LapseFramework.Internal
 			EvaluateEndTime(time);
 			InsertChild(timer);
 			return timer;
+		}
+
+		public IFateTrigger<IFateTimer> AddTrigger(float time,
+			FateFX.EventAction<IFateTimer> triggerAction)
+		{
+			var trigger = AddTrigger(time, 1);
+			trigger.AddEvent(triggerAction);
+			return trigger;
 		}
 
 		protected override bool CanUpdateAtCurrent(FateTimer child)
