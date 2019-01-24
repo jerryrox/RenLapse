@@ -402,14 +402,16 @@ namespace Renko.LapseFramework.Internal
 		{
 			// Find the insertion index of the specified child
 			int insertIndex = GetChildInsertIndex(child);
-			if(insertIndex >= 0)
+			if(insertIndex < 0)
 			{
-				Debug.LogWarning("FateAnimation.InsertChild - This shouldn't have happened...");
-				return;
+				// Convert to the actual insert index
+				insertIndex = ~insertIndex;
+			}
+			else
+			{
+				insertIndex ++;
 			}
 
-			// Convert to the actual insert index
-			insertIndex = ~insertIndex;
 			// Insert child
 			if(insertIndex >= childAnimations.Count)
 				childAnimations.Add(child);
